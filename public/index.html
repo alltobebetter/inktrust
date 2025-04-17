@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InkTrust 无感验证演示</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    .card {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .result {
+      margin-top: 30px;
+      padding: 15px;
+      border-radius: 5px;
+      display: none;
+    }
+    .result.success {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      display: block;
+    }
+    .result.error {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      display: block;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    code {
+      background-color: #f1f1f1;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    }
+    pre {
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>InkTrust 无感验证演示</h1>
+    <p>这个页面演示了InkTrust无感验证SDK的使用方法</p>
+  </header>
+  
+  <div class="card">
+    <h2>验证状态</h2>
+    <p>当前状态: <span id="status">初始化中...</span></p>
+    <div id="result" class="result"></div>
+    <button id="verifyBtn">手动验证</button>
+  </div>
+  
+  <div class="card">
+    <h2>如何使用</h2>
+    <p>将以下代码添加到您的网站中:</p>
+    <pre><code>&lt;script src="https://your-vercel-deployment-url.vercel.app/sdk.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const inkTrust = new InkTrust({
+    apiUrl: 'https://your-vercel-deployment-url.vercel.app/api',
+    onVerified: function(result) {
+      console.log('验证结果:', result);
+      // 根据结果执行操作
+      if (result.isHuman) {
+        // 用户是真人
+      } else {
+        // 可能是机器人
+      }
+    }
+  });
+&lt;/script&gt;</code></pre>
+  </div>
+  
+  <div class="card">
+    <h2>SDK配置选项</h2>
+    <ul>
+      <li><code>apiUrl</code>: API服务器地址</li>
+      <li><code>autoVerify</code>: 是否自动验证 (默认: true)</li>
+      <li><code>verifyDelay</code>: 自动验证延迟时间 (默认: 2000ms)</li>
+      <li><code>onInitialized</code>: 初始化完成回调</li>
+      <li><code>onVerified</code>: 验证完成回调</li>
+      <li><code>onError</code>: 错误回调</li>
+    </ul>
+  </div>
+  
+  <script src="sdk.js"></script>
+  <script>
+    // 初始化InkTrust
+    const inkTrust = new InkTrust({
+      // 在本地开发环境中使用相对路径
+      apiUrl: '/api',
+      onInitialized: function(data) {
+        document.getElementById('status').textContent = '已初始化，收集用户行为中...';
+        console.log('初始化完成:', data);
+      },
+      onVerified: function(result) {
+        const resultElement = document.getElementById('result');
+        const statusElement = document.getElementById('status');
+        
+        if (result.isHuman) {
+          statusElement.textContent = '验证通过 ✓';
+          resultElement.className = 'result success';
+          resultElement.innerHTML = `
+            <h3>验证成功!</h3>
+            <p>可信度分数: ${result.score}/100</p>
+            <p>您被识别为真实用户。</p>
+          `;
+        } else {
+          statusElement.textContent = '验证失败 ✗';
+          resultElement.className = 'result error';
+          resultElement.innerHTML = `
+            <h3>验证失败</h3>
+            <p>可信度分数: ${result.score}/100</p>
+            <p>您的行为模式与机器人相似。</p>
+          `;
+        }
+        
+        console.log('验证结果:', result);
+      },
+      onError: function(error) {
+        document.getElementById('status').textContent = '验证错误';
+        document.getElementById('result').className = 'result error';
+        document.getElementById('result').innerHTML = `
+          <h3>发生错误</h3>
+          <p>${error.message}</p>
+        `;
+        console.error('InkTrust错误:', error);
+      }
+    });
+    
+    // 手动验证按钮
+    document.getElementById('verifyBtn').addEventListener('click', async function() {
+      this.disabled = true;
+      this.textContent = '验证中...';
+      
+      try {
+        await inkTrust.verify();
+      } catch (error) {
+        console.error('验证错误:', error);
+      }
+      
+      this.textContent = '已验证';
+    });
+  </script>
+</body>
+</html>
